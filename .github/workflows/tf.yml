@@ -1,10 +1,13 @@
 name: "Infra Change Management"
 # https://spacelift.io/blog/github-actions-terraform
 
-on: "push"
-#  push:
-#    paths:
-#    - "infra/**.tf"
+on:
+  push:
+    paths:
+    - "infra/setup/**.tf"
+    - "infra/**.tf"
+    - ".github/actions/*"
+    - ".github/workflows/*"
 
 permissions:
   actions: write
