@@ -51,9 +51,6 @@ jobs:
           tfbackend-file-name: ../${{ env.TFBACKEND_FILE_NAME }}
           tfvar-file-name:  ../${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
-      - name: test
-        shell: bash
-        run: echo ${{ steps.tf-flow-repo-setup.outputs.summary }}
       - name: TF Flow - General Functionality
         if: ${{ hashFiles('./infra/**.tf') != ''}}
         id: tf-flow-general
@@ -121,7 +118,7 @@ jobs:
                   delete parsedOutcome.plan_stderr
 
                   let emojiOutcomes = new Map();
-                  for (const [step, outcome] of parsedOutcome) {
+                  for (const [step, outcome] of Object.entries(parsedOutcome)) {
                       if (outcome == 'failure') {
                           hasFailure = true
                           emojiOutcomes.set(step, ':x:')
