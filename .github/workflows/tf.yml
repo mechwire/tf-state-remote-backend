@@ -97,20 +97,25 @@ jobs:
                   return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan')
               })
 
-              
+
               let output = `# Terraform Plan
               `
 
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
-                  let hasFailure = false;
+                  let hasFailure = false
                   let parsedOutcome = JSON.parse(outcome)
+
+                  console.log(parsedOutcome)
+
                   let name = parsedOutcome.name
                   delete parsedOutcome.name
-                  let stdout = parsedOutcome.stdout
-                  delete parsedOutcome.stdout
-                  let stderr = parsedOutcome.stderr
-                  delete parsedOutcome.stderr
+
+                  let stdout = parsedOutcome.plan_stdout
+                  delete parsedOutcome.plan_stdout
+
+                  let stderr = parsedOutcome.plan_stderr
+                  delete parsedOutcome.plan_stderr
 
                   let emojiOutcomes = new Map();
                   for (const [step, outcome] of parsedOutcome) {

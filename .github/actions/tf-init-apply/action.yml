@@ -71,8 +71,8 @@ runs:
               "name": process.env.tf_component_name,
               "init": process.env.init_outcome,
               "fmt": process.env.fmt_outcome,
-              "validate_outcome": process.env.validate_outcome,
-              "plan_outcome": process.env.plan_outcome,
+              "validate": process.env.validate_outcome,
+              "plan": process.env.plan_outcome,
               "plan_stdout": process.env.plan_stdout,
               "plan_stderr": process.env.plan_stderr,
             })
