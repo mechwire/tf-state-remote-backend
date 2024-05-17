@@ -1,0 +1,80 @@
+name: "TF Setup"
+description: "This sets up Terraform, as well as a supporting backend and variable file."
+inputs:
+  gh-token:
+    required: true
+  repo-specific-secrets:
+    required: false
+  tfbackend-file-name:
+    description: "Name of tfbackend file to create"
+    required: true
+  tfvar-file-name:
+    description: "Name of tfvar file to create"
+    required: true
+  tfstate-s3-bucket-arn:
+    description: "ARN for the s3 bucket for tf state"
+    required: true
+  tfstate-lock-dynamodb-arn:
+    description: "ARN for the dynamodb instance for tf state"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Terraform with specified version on the runner
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+    - name: Make TF backend config
+      shell: bash
+      run: >
+          touch $tfbackend_file_name
+
+          key=$repository
+          bucket=$(echo "$tfstate_s3" | sed 's/.*://')
+          dynamodb_table=$(echo "$tfstate_dynamo" | sed 's/.*\///')
+
+          printf "key=\"$key\"\nbucket=\"$bucket\"\ndynamodb_table=\"$dynamodb_table\"\n" > $tfbackend_file_name
+      env:
+        repository: ${{ github.repository }}
+        tfbackend_file_name: ${{ inputs.tfbackend-file-name }}
+        tfstate_s3: ${{ inputs.tfstate-s3-bucket-arn }}
+        tfstate_dynamo: ${{ inputs.tfstate-lock-dynamodb-arn}}
+    - name: Make .netrc for Terraform module use
+      shell: bash
+      run: >
+          touch ~/.netrc
+
+          printf "machine github.com login github_actions password ${{ inputs.gh-token }}\n" > ~/.netrc
+    - name: Build tfvars string
+      id: build-tfvars-str
+      uses: actions/github-script@v7
+      env:
+          repository: ${{ github.repository }}
+          # whatever isn't covered by the above
+          repo_specific_secrets: ${{ inputs.repo-specific-secrets }}
+      with:
+        github-token: ${{ inputs.gh-token }}
+        result-encoding: string
+        # https://github.com/actions/github-script/issues/273#issuecomment-1257245316
+        script: |
+            const repoSpecificSecrets = JSON.parse(process.env.repo_specific_secrets)
+
+
+            const [organization, repo_name] = process.env.repository.split("/")
+
+            let str = `organization = "${organization}"\nrepository_name = "${repo_name}"\n`;
+
+            for (let [key, value] of Object.entries(repoSpecificSecrets)) {
+                str += `${key.toLowerCase()} = \"${value}\"\n`
+            }
+            return str
+    - name: Build tfvars file
+      shell: bash
+      run: >
+          touch $tfvar_file_name
+
+          echo '${{steps.build-tfvars-str.outputs.result}}' > $tfvar_file_name
+      env:
+        repository: ${{ github.repository }}
+        tfvar_file_name: ${{ inputs.tfvar-file-name }}
+

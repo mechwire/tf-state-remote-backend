@@ -1,0 +1,104 @@
+name: "TF Init -> Apply"
+description: "This goes through the TF init -> plan flow. If merged to the default branch, it will also apply the changes."
+inputs:
+  directory:
+    description: "working directory to use"
+    required: true
+  tf-component-name:
+    description: "nickname for the tf component, mostly for logging"
+    required: true
+  aws-region:
+    description: "region to use when performing AWS operations"
+    required: true
+  aws-account-id:
+    description: "the ID of the AWS account"
+    required: true
+  aws-role-to-assume:
+    description: "ARN or name of role to assume when performing TF operations"
+    required: true
+  tfbackend-file-name:
+    description: "Name of tfbackend file to use"
+    required: true
+  tfvar-file-name:
+    description: "Name of tfvar file to use"
+    required: true
+outputs:
+  summary:
+    description: "Results of the Terraform Flow"
+    value: ${{ steps.build-output.outputs.build-output }}
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS Credentials - ${{ inputs.role-to-assume }}
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.aws-region }}
+        role-to-assume: arn:aws:iam::${{inputs.aws-account-id}}:role/${{ inputs.aws-role-to-assume }}
+        mask-aws-account-id: true
+    - name: Terraform init
+      id: init
+      # https://medium.com/all-things-devops/how-to-store-terraform-state-on-s3-be9cd0070590
+      shell: bash
+      run: terraform init --backend-config $tf_backend_file_name
+      working-directory: ${{ inputs.directory }}
+      env:
+        tf_backend_file_name: ${{ inputs.tfbackend-file-name }}
+    - name: Terraform format
+      id: fmt
+      shell: bash
+      run: terraform fmt -check
+      working-directory: ${{ inputs.directory }}
+    - name: Terraform validate
+      id: validate
+      shell: bash
+      run: terraform validate
+    - name: Terraform plan
+      id: plan
+      if: github.event_name == 'push'
+      shell: bash
+      run: terraform plan -var-file="$tfvar_file_name" -no-color -input=false
+      working-directory: ${{ inputs.directory }}
+      env:
+        tfvar_file_name: ${{ inputs.tfvar-file-name }}
+      continue-on-error: true
+    - name: TF Flow Result Builder Summary
+      id: build-flow-summary
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+            return JSON.stringify({
+              "name": process.env.tf_component_name,
+              "init": process.env.init_outcome,
+              "fmt": process.env.fmt_outcome,
+              "validate_outcome": process.env.validate_outcome,
+              "plan_outcome": process.env.plan_outcome,
+              "plan_stdout": process.env.plan_stdout,
+              "plan_stderr": process.env.plan_stderr,
+            })
+      env:
+        tf_component_name: ${{ inputs.tf_component_name }}
+        init_outcome: ${{ steps.init.outcome }}
+        fmt_outcome: ${{ steps.fmt.outcome }}
+        validate_outcome: ${{ steps.validate.outcome }}
+        plan_outcome: ${{ steps.plan.outcome }}
+        plan_stdout: ${{ steps.plan.outputs.stdout }}
+        plan_stderr: ${{ steps.plan.outputs.stderr }}
+    - name: TF Flow Result Outcome
+      id: build-output
+      shell: bash
+      run: >
+
+          echo '${{steps.build-flow-summary.outputs.result}}'  >> $GITHUB_OUTPUT
+    - name: Terraform Plan Status
+      if: steps.plan.outcome == 'failure'
+      shell: bash
+      run: exit 1
+    - name: Terraform Apply (on Merge on Default Branch)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      shell: bash
+      run: terraform apply -var-file="$tfvar_file_name" -auto-approve -input=false 
+      # -input=False means no interactive prompts
+      working-directory: ${{ inputs.directory }}
+      env:
+        tfvar_file_name: ${{ inputs.tfvar-file-name }}
