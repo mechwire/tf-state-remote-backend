@@ -142,7 +142,7 @@ jobs:
 
               `
 
-                  if (hasFailure) {
+                  if (!hasFailure) {
                       output += `
               <details><summary>Show Plan</summary>
               
