@@ -106,8 +106,6 @@ jobs:
                   let hasFailure = false
                   let parsedOutcome = JSON.parse(outcome)
 
-                  console.log(parsedOutcome)
-
                   let name = parsedOutcome.name
                   delete parsedOutcome.name
 
