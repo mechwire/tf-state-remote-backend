@@ -101,13 +101,9 @@ jobs:
               let output = `# Terraform Plan
               `
 
-              console.log(process.env.general_outcome)
-
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
-                  console.log(outcome == 'undefined', outcome == undefined, outcome == null, outcome == "")
-
-                  if (outcome == 'undefined') {
+                  if (outcome == '') {
                     continue
                   }
 
