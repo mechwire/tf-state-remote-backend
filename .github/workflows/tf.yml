@@ -111,7 +111,7 @@ jobs:
 
               let output = `# Terraform Plan
               `
-              
+
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
                 let parsedOutcome = JSON.parse(outcome)
@@ -134,10 +134,10 @@ jobs:
 
               |  Step      |   Outcome                        |
               |------------|----------------------------------|
-              | `init`     | ${emojiOutcomes.get("init")}     |
-              | `fmt`      | ${emojiOutcomes.get("fmt")}      |
-              | `validate` | ${emojiOutcomes.get("validate")} |
-              | `plan`     | ${emojiOutcomes.get("plan")}     |
+              | \`init\`     | ${emojiOutcomes.get("init")}     |
+              | \`fmt\`      | ${emojiOutcomes.get("fmt")}      |
+              | \`validate\` | ${emojiOutcomes.get("validate")} |
+              | \`plan\`     | ${emojiOutcomes.get("plan")}     |
 
               `
 
