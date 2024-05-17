@@ -70,6 +70,7 @@ jobs:
         env:
             setup_outcome: ${{ steps.tf-flow-repo-setup.outputs.summary }}
             general_outcome: ${{ steps.tf-flow-general.outputs.summary }}
+            aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # https://github.com/actions/github-script/issues/273#issuecomment-1257245316
@@ -114,6 +115,7 @@ jobs:
                   delete parsedOutcome.name
 
                   let stdout = parsedOutcome.plan_stdout
+                  let stdout = stdout.replace(process.env.aws_account_id, "XXXXXXXXXXXXXXXXX")
                   delete parsedOutcome.plan_stdout
 
                   let stderr = parsedOutcome.plan_stderr
