@@ -115,7 +115,7 @@ jobs:
                   delete parsedOutcome.name
 
                   let stdout = parsedOutcome.plan_stdout
-                  let stdout = stdout.replace(process.env.aws_account_id, "XXXXXXXXXXXXXXXXX")
+                  stdout = stdout.replace(process.env.aws_account_id, "XXXXX")
                   delete parsedOutcome.plan_stdout
 
                   let stderr = parsedOutcome.plan_stderr
