@@ -1,10 +1,12 @@
 name: "Infra Change Management"
 # https://spacelift.io/blog/github-actions-terraform
 
-on: "push"
-#  push:
-#    paths:
-#    - "infra/**.tf"
+on:
+  push:
+    paths:
+    - "infra/setup/**.tf"
+    - "infra/**.tf"
+    - ".github/**"
 
 permissions:
   actions: write
@@ -34,10 +36,11 @@ jobs:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           repo-specific-secrets: ${{ toJSON(secrets) }}
           tfbackend-file-name: ./infra/${{ env.TFBACKEND_FILE_NAME }}
-          tfvar-file-name:  ./infra/${{ env.TFVAR_FILE_NAME }}
+          tfvar-file-name:  ./${{ env.TFVAR_FILE_NAME }}
           tfstate-s3-bucket-arn: ${{ secrets.TF_STATE_S3_BUCKET_ARN }}
           tfstate-lock-dynamodb-arn: ${{ secrets.TF_STATE_LOCK_DYNAMODB_ARN }}
       - name: TF Flow - Repo Setup
+        if: ${{ hashFiles('./infra/setup/**.tf') != ''}}
         id: tf-flow-repo-setup
         uses: ./.github/actions/tf-init-apply
         with:
@@ -48,9 +51,10 @@ jobs:
           # github.com/mechwire/github-oidc-role
           aws-role-to-assume: github_infra_role_provisioner
           tfbackend-file-name: ../${{ env.TFBACKEND_FILE_NAME }}
-          tfvar-file-name:  ../${{ env.TFVAR_FILE_NAME }}
+          tfvar-file-name:  ../../${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
       - name: TF Flow - General Functionality
+        if: ${{ hashFiles('./infra/**.tf') != ''}}
         id: tf-flow-general
         uses: ./.github/actions/tf-init-apply
         with:
@@ -60,24 +64,25 @@ jobs:
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
           aws-role-to-assume:  github_infra_${{ github.event.repository.name }}
           tfbackend-file-name: ${{ env.TFBACKEND_FILE_NAME }}
-          tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
+          tfvar-file-name:  ../${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
       - name: Update PR with TF Statuses
         uses: actions/github-script@v7
         if: github.ref != 'refs/heads/main' && github.event_name == 'push'
         env:
-            setup_outcome: ${{ steps.tf-flow-general.summary }}
-            general_outcome: ${{ steps.tf-flow-general.summary }}
+            setup_outcome: ${{ steps.tf-flow-repo-setup.outputs.summary }}
+            general_outcome: ${{ steps.tf-flow-general.outputs.summary }}
+            aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # https://github.com/actions/github-script/issues/273#issuecomment-1257245316
           script: |
               // Get pull requests that are open for current ref.
               const pullRequests = await github.rest.pulls.list({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
               })
 
               // Set issue number for following calls from context (if on pull request event) or from above variable.
@@ -85,92 +90,94 @@ jobs:
 
               // Retrieve existing bot comments for the PR
               const {
-                data: comments
+                  data: comments
               } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
               })
               const botComment = comments.find(comment => {
-                return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan')
+                  return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan')
               })
 
-              const outcomes = new Map();
-
-              const setupOutcome = JSON.parse(process.env.setup_outcome)
-              const generalOutcome = JSON.parse(process.env.general_outcome)
-
-
-              # JSONIFY
-              outcomes.set(setupOutcome.name, setupOutcome)
-              delete outcomes[setupOutcome.name].name
-              outcomes.set(generalOutcome.name, generalOutcome)
-              delete outcomes[generalOutcome.name].name
-
-              let hasFailure = false;
 
               let output = `# Terraform Plan
               `
 
-              const outcomes = new Map();
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
-                let parsedOutcome = JSON.parse(outcome)
-                let name = parsedOutcome.name
-                delete parsedOutcome.name
+                  if (outcome == '') {
+                    continue
+                  }
 
-                let emojiOutcomes = new Map();
-                for (const [step, outcome] of parsedOutcome) {
-                  if (outcome == 'failure') {
-                        hasFailure = true
-                        emojiOutcomes.set(step, ':x:')
-                    } else {
-                        emojiOutcomes.set(step, ':white_check_mark:')
-                    }
-                }
+                  let hasFailure = false
+                  let parsedOutcome = JSON.parse(outcome)
 
-              output += `
+                  let name = parsedOutcome.name
+                  delete parsedOutcome.name
+
+                  let stdout = parsedOutcome.plan_stdout
+                  stdout = stdout.replace(process.env.aws_account_id, "XXXXX")
+                  delete parsedOutcome.plan_stdout
+
+                  let stderr = parsedOutcome.plan_stderr
+                  delete parsedOutcome.plan_stderr
+
+                  let emojiOutcomes = new Map();
+                  for (const [step, outcome] of Object.entries(parsedOutcome)) {
+                      if (outcome == 'failure') {
+                          hasFailure = true
+                          emojiOutcomes.set(step, ':x:')
+                      } else {
+                          emojiOutcomes.set(step, ':white_check_mark:')
+                      }
+                  }
+
+                  output += `
 
               ## ${name}
 
               |  Step      |   Outcome                        |
               |------------|----------------------------------|
-              | `init`     | ${emojiOutcomes.get("init")}     |
-              | `fmt`      | ${emojiOutcomes.get("fmt")}      |
-              | `validate` | ${emojiOutcomes.get("validate")} |
-              | `plan`     | ${emojiOutcomes.get("plan")}     |
+              | \`init\`     | ${emojiOutcomes.get("init")}     |
+              | \`fmt\`      | ${emojiOutcomes.get("fmt")}      |
+              | \`validate\` | ${emojiOutcomes.get("validate")} |
+              | \`plan\`     | ${emojiOutcomes.get("plan")}     |
 
               `
 
-              }
-
-              if (hasFailure) {
-                output += `
+                  if (!hasFailure) {
+                      output += `
               <details><summary>Show Plan</summary>
               
               \`\`\`terraform
-              ${process.env.plan_stdout.trimEnd()}
+              ${stdout.trimEnd()}
               \`\`\`
 
               </details>
               `
-              } else {
-                output += `Errors Found. Check Github Actions logs for detail.`
+                  } else {
+                      output += `Errors Found. Check Github Actions logs for detail.`
+                  }
               }
 
               // If we have a comment, update it, otherwise create a new one
               if (botComment) {
-                github.rest.issues.updateComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: botComment.id,
-                  body: output
-                })
+                  github.rest.issues.updateComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      comment_id: botComment.id,
+                      body: output
+                  })
               } else {
-                github.rest.issues.createComment({
-                  issue_number: issueNumber,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: output
-                })
+                  github.rest.issues.createComment({
+                      issue_number: issueNumber,
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      body: output
+                  })
               }
+      - name: Reflect Failure Status if Needed
+        if: ${{ steps.tf-flow-repo-setup.outcome == 'failure' ||  steps.tf-flow-general.outcome == 'failure'}}
+        shell: bash
+        run: exit 1
