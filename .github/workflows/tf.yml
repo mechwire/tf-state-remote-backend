@@ -97,18 +97,7 @@ jobs:
                   return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan')
               })
 
-              const outcomes = new Map();
-
-              const setupOutcome = JSON.parse(process.env.setup_outcome)
-              const generalOutcome = JSON.parse(process.env.general_outcome)
-
-              outcomes.set(setupOutcome.name, setupOutcome)
-              delete outcomes[setupOutcome.name].name
-              outcomes.set(generalOutcome.name, generalOutcome)
-              delete outcomes[generalOutcome.name].name
-
-
-
+              
               let output = `# Terraform Plan
               `
 
