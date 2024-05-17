@@ -38,6 +38,7 @@ jobs:
           tfstate-s3-bucket-arn: ${{ secrets.TF_STATE_S3_BUCKET_ARN }}
           tfstate-lock-dynamodb-arn: ${{ secrets.TF_STATE_LOCK_DYNAMODB_ARN }}
       - name: TF Flow - Repo Setup
+        if: ${{ hashFiles("./infra/setup/**.tf") != ""}}
         id: tf-flow-repo-setup
         uses: ./.github/actions/tf-init-apply
         with:
@@ -51,6 +52,7 @@ jobs:
           tfvar-file-name:  ../${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
       - name: TF Flow - General Functionality
+        if: ${{ hashFiles("./infra/**.tf") != ""}}
         id: tf-flow-general
         uses: ./.github/actions/tf-init-apply
         with:
