@@ -91,13 +91,16 @@ runs:
       run: >
           echo 'summary=${{steps.build-flow-summary.outputs.result}}'  >> $GITHUB_OUTPUT
     - name: Terraform Plan Status
-      if: steps.plan.outcome == 'failure'
+      if: ${{ steps.plan.outcome == 'failure' }}
       shell: bash
       run: exit 1
     - name: Terraform Apply (on Merge on Default Branch)
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
       shell: bash
-      run: terraform apply -var-file="$tfvar_file_name" -auto-approve -input=false 
+      run: >
+
+          echo "Applying TF"
+          terraform apply -var-file="$tfvar_file_name" -auto-approve -input=false 
       # -input=False means no interactive prompts
       working-directory: ${{ inputs.directory }}
       env:
