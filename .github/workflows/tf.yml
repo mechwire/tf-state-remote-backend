@@ -52,7 +52,7 @@ jobs:
           tfvar-file-name:  ../${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
       - name: TF Flow - General Functionality
-        if: ${{ hashFiles("./infra/**.tf") != ""}}
+        if: ${{ hashFiles('./infra/**.tf') != ''}}
         id: tf-flow-general
         uses: ./.github/actions/tf-init-apply
         with:
