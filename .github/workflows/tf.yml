@@ -76,10 +76,10 @@ jobs:
           script: |
               // Get pull requests that are open for current ref.
               const pullRequests = await github.rest.pulls.list({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: 'open',
+                  head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
               })
 
               // Set issue number for following calls from context (if on pull request event) or from above variable.
@@ -87,14 +87,14 @@ jobs:
 
               // Retrieve existing bot comments for the PR
               const {
-                data: comments
+                  data: comments
               } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
               })
               const botComment = comments.find(comment => {
-                return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan')
+                  return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan')
               })
 
               const outcomes = new Map();
@@ -107,28 +107,33 @@ jobs:
               outcomes.set(generalOutcome.name, generalOutcome)
               delete outcomes[generalOutcome.name].name
 
-              let hasFailure = false;
+
 
               let output = `# Terraform Plan
               `
 
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
-                let parsedOutcome = JSON.parse(outcome)
-                let name = parsedOutcome.name
-                delete parsedOutcome.name
+                  let hasFailure = false;
+                  let parsedOutcome = JSON.parse(outcome)
+                  let name = parsedOutcome.name
+                  delete parsedOutcome.name
+                  let stdout = parsedOutcome.stdout
+                  delete parsedOutcome.stdout
+                  let stderr = parsedOutcome.stderr
+                  delete parsedOutcome.stderr
 
-                let emojiOutcomes = new Map();
-                for (const [step, outcome] of parsedOutcome) {
-                  if (outcome == 'failure') {
-                        hasFailure = true
-                        emojiOutcomes.set(step, ':x:')
-                    } else {
-                        emojiOutcomes.set(step, ':white_check_mark:')
-                    }
-                }
+                  let emojiOutcomes = new Map();
+                  for (const [step, outcome] of parsedOutcome) {
+                      if (outcome == 'failure') {
+                          hasFailure = true
+                          emojiOutcomes.set(step, ':x:')
+                      } else {
+                          emojiOutcomes.set(step, ':white_check_mark:')
+                      }
+                  }
 
-              output += `
+                  output += `
 
               ## ${name}
 
@@ -141,10 +146,8 @@ jobs:
 
               `
 
-              }
-
-              if (hasFailure) {
-                output += `
+                  if (hasFailure) {
+                      output += `
               <details><summary>Show Plan</summary>
               
               \`\`\`terraform
@@ -153,23 +156,24 @@ jobs:
 
               </details>
               `
-              } else {
-                output += `Errors Found. Check Github Actions logs for detail.`
+                  } else {
+                      output += `Errors Found. Check Github Actions logs for detail.`
+                  }
               }
 
               // If we have a comment, update it, otherwise create a new one
               if (botComment) {
-                github.rest.issues.updateComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: botComment.id,
-                  body: output
-                })
+                  github.rest.issues.updateComment({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      comment_id: botComment.id,
+                      body: output
+                  })
               } else {
-                github.rest.issues.createComment({
-                  issue_number: issueNumber,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: output
-                })
+                  github.rest.issues.createComment({
+                      issue_number: issueNumber,
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      body: output
+                  })
               }
