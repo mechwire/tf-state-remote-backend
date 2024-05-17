@@ -88,7 +88,7 @@ runs:
       id: build-output
       shell: bash
       run: >
-
+          echo '${{steps.build-flow-summary.outputs.result}}'
           echo '${{steps.build-flow-summary.outputs.result}}'  >> $GITHUB_OUTPUT
     - name: Terraform Plan Status
       if: steps.plan.outcome == 'failure'

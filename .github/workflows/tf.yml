@@ -53,7 +53,7 @@ jobs:
         continue-on-error: true
       - name: test
         shell: bash
-        run: echo ${{ steps.tf-flow-repo-setup.summary }}
+        run: echo ${{ steps.tf-flow-repo-setup.outputs.summary }}
       - name: TF Flow - General Functionality
         if: ${{ hashFiles('./infra/**.tf') != ''}}
         id: tf-flow-general
@@ -71,8 +71,8 @@ jobs:
         uses: actions/github-script@v7
         if: github.ref != 'refs/heads/main' && github.event_name == 'push'
         env:
-            setup_outcome: ${{ steps.tf-flow-repo-setup.summary }}
-            general_outcome: ${{ steps.tf-flow-general.summary }}
+            setup_outcome: ${{ steps.tf-flow-repo-setup.outputs.summary }}
+            general_outcome: ${{ steps.tf-flow-general.outputs.summary }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # https://github.com/actions/github-script/issues/273#issuecomment-1257245316
