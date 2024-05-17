@@ -103,7 +103,7 @@ jobs:
 
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
-                  console.log(outcome)
+                  console.log(outcome == 'undefined')
 
                   if (outcome == 'undefined') {
                     continue
