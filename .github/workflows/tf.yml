@@ -111,8 +111,7 @@ jobs:
 
               let output = `# Terraform Plan
               `
-
-              const outcomes = new Map();
+              
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
                 let parsedOutcome = JSON.parse(outcome)
