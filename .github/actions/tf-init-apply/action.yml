@@ -39,10 +39,11 @@ runs:
       id: init
       # https://medium.com/all-things-devops/how-to-store-terraform-state-on-s3-be9cd0070590
       shell: bash
-      run: terraform init --backend-config $tf_backend_file_name
+      run: terraform init -backend-config="key=$tf_state_key" --backend-config $tf_backend_file_name
       working-directory: ${{ inputs.directory }}
       env:
         tf_backend_file_name: ${{ inputs.tfbackend-file-name }}
+        tf_state_key: ${{ github.event.repository.name }}_${{ inputs.tf-component-name }}
     - name: Terraform format
       id: fmt
       shell: bash
