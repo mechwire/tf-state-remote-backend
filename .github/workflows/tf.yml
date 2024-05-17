@@ -103,6 +103,10 @@ jobs:
 
               for (let outcome of [process.env.setup_outcome, process.env.general_outcome]) {
 
+                  if (outcome == 'undefined') {
+                    continue
+                  }
+
                   let hasFailure = false
                   let parsedOutcome = JSON.parse(outcome)
 
