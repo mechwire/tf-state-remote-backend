@@ -147,7 +147,7 @@ jobs:
               <details><summary>Show Plan</summary>
               
               \`\`\`terraform
-              ${process.env.plan_stdout.trimEnd()}
+              ${parsedOutcome.plan_stdout.trimEnd()}
               \`\`\`
 
               </details>
