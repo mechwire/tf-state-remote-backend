@@ -59,10 +59,10 @@ runs:
 
             const [organization, repo_name] = process.env.repository.split("/")
 
-            let str = `TF_VAR_organization="${organization}"\nTF_VAR_repository_name="${repo_name}"\n`;
+            let str = `organization = "${organization}"\nrepository_name = "${repo_name}"\n`;
 
             for (let [key, value] of Object.entries(repoSpecificSecrets)) {
-                str += `TF_VAR_${key.toLowerCase()}=\"${value}\"\n`
+                str += `${key.toLowerCase()} = \"${value}\"\n`
             }
             return str
     - name: Write tfvars to env
