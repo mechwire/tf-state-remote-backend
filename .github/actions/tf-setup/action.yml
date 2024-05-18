@@ -71,13 +71,14 @@ runs:
     - name: Build tfvars file
       shell: bash
       run: >
+
           touch $tfvar_file_name
 
           echo '${{steps.build-tfvars-str.outputs.result}}' >> $tfvar_file_name
 
           while IFS= read -r line
           do
-              echo "$line" >> $GITHUB_ENV
+              echo '$line' >> $GITHUB_ENV
           done < $tfvar_file_name
 
       env:
