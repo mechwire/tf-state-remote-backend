@@ -76,11 +76,7 @@ runs:
 
           echo '${{steps.build-tfvars-str.outputs.result}}' >> $tfvar_file_name
 
-          while IFS= read -r line
-          do
-              echo $line;
-              echo '$line' >> $GITHUB_ENV;
-          done < $tfvar_file_name
+          while IFS= read -r line; do echo '$line' >> $GITHUB_ENV; done < $tfvar_file_name
 
       env:
         repository: ${{ github.repository }}
