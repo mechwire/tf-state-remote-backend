@@ -65,7 +65,6 @@ runs:
             let values = [
                 `organization = "${organization}"`,
                 `repository_name = "${repo_name}"`,
-
             ]
 
             for (let [key, value] of Object.entries(repoSpecificSecrets)) {
