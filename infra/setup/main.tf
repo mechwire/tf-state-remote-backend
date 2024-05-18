@@ -10,8 +10,8 @@ terraform {
 
 provider "aws" {}
 
-module "github_oidc_role" {
-  source          = "git::https://github.com/mechwire/github-oidc-role//infra/github_oidc_role"
+module "basic_repo_role" {
+  source          = "../repo_role"
   aws_account_id  = var.aws_account_id
   organization    = var.organization
   repository_name = var.repository_name
@@ -42,6 +42,6 @@ resource "aws_iam_policy" "repo_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "repo_role" {
-  role       = module.github_oidc_role.name
+  role       = module.basic_repo_role.name
   policy_arn = aws_iam_policy.repo_role.arn
 }
