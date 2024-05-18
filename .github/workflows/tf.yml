@@ -178,3 +178,7 @@ jobs:
                       body: output
                   })
               }
+      - name: Reflect Failure Status if Needed
+        if: ${{ steps.update-pr.outcome == 'failure' }}
+        shell: bash
+        run: exit 1
