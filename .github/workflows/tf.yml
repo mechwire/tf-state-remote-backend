@@ -6,8 +6,7 @@ on:
     paths:
     - "infra/setup/**.tf"
     - "infra/**.tf"
-    - ".github/actions/*"
-    - ".github/workflows/*"
+    - ".github/**"
 
 permissions:
   actions: write
