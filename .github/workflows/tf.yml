@@ -39,8 +39,6 @@ jobs:
           tfvar-file-name:  ./infra/${{ env.TFVAR_FILE_NAME }}
           tfstate-s3-bucket-arn: ${{ secrets.TF_STATE_S3_BUCKET_ARN }}
           tfstate-lock-dynamodb-arn: ${{ secrets.TF_STATE_LOCK_DYNAMODB_ARN }}
-      - name: test
-        run: cat infra/terraform.tfvars
       - name: TF Flow - Repo Setup
         if: ${{ hashFiles('./infra/setup/**.tf') != ''}}
         id: tf-flow-repo-setup
