@@ -94,7 +94,7 @@ runs:
     - name: Build tfvars file 3 Test
       shell: bash
       run: >
-          while IFS="\n" read -r line; do echo '$line' >> $GITHUB_ENV; done < $tfvar_file_name
+          while IFS="\n" read -r line; do echo $line >> $GITHUB_ENV; done < $tfvar_file_name
       env:
         repository: ${{ github.repository }}
         tfvar_file_name: ${{ inputs.tfvar-file-name }}
