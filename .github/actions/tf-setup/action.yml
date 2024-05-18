@@ -62,12 +62,16 @@ runs:
 
             const [organization, repo_name] = process.env.repository.split("/")
 
-            let str = `organization = "${organization}"\nrepository_name = "${repo_name}"\n`;
+            let values = [
+                `organization = "${organization}"`,
+                `repository_name = "${repo_name}"`,
+
+            ]
 
             for (let [key, value] of Object.entries(repoSpecificSecrets)) {
-                str += `${key.toLowerCase()} = \"${value}\"\n`
+                values.push(`${key.toLowerCase()} = \"${value}\"`)
             }
-            return str
+            return values.join("\n")
     - name: Write tfvars to env
       shell: bash
       run: >
