@@ -57,7 +57,7 @@ runs:
       id: plan
       if: github.event_name == 'push'
       shell: bash
-      run: terraform plan -var-file="$tfvar_file_name" -no-color -input=false
+      run: terraform plan -var-file="$tfvar_file_name" -no-color -input=false -compact-warnings
       working-directory: ${{ inputs.directory }}
       env:
         tfvar_file_name: ${{ inputs.tfvar-file-name }}
@@ -105,3 +105,4 @@ runs:
       working-directory: ${{ inputs.directory }}
       env:
         tfvar_file_name: ${{ inputs.tfvar-file-name }}
+

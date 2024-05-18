@@ -1,10 +1,12 @@
 name: "Infra Change Management"
 # https://spacelift.io/blog/github-actions-terraform
 
-on: "push"
-#  push:
-#    paths:
-#    - "infra/**.tf"
+on:
+  push:
+    paths:
+    - "infra/setup/**.tf"
+    - "infra/**.tf"
+    - ".github/**"
 
 permissions:
   actions: write
@@ -34,7 +36,7 @@ jobs:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           repo-specific-secrets: ${{ toJSON(secrets) }}
           tfbackend-file-name: ./infra/${{ env.TFBACKEND_FILE_NAME }}
-          tfvar-file-name:  ./infra/${{ env.TFVAR_FILE_NAME }}
+          tfvar-file-name:  ./${{ env.TFVAR_FILE_NAME }}
           tfstate-s3-bucket-arn: ${{ secrets.TF_STATE_S3_BUCKET_ARN }}
           tfstate-lock-dynamodb-arn: ${{ secrets.TF_STATE_LOCK_DYNAMODB_ARN }}
       - name: TF Flow - Repo Setup
@@ -49,7 +51,7 @@ jobs:
           # github.com/mechwire/github-oidc-role
           aws-role-to-assume: github_infra_role_provisioner
           tfbackend-file-name: ../${{ env.TFBACKEND_FILE_NAME }}
-          tfvar-file-name:  ../${{ env.TFVAR_FILE_NAME }}
+          tfvar-file-name:  ../../${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
       - name: TF Flow - General Functionality
         if: ${{ hashFiles('./infra/**.tf') != ''}}
@@ -62,7 +64,7 @@ jobs:
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
           aws-role-to-assume:  github_infra_${{ github.event.repository.name }}
           tfbackend-file-name: ${{ env.TFBACKEND_FILE_NAME }}
-          tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
+          tfvar-file-name:  ../${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
       - name: Update PR with TF Statuses
         uses: actions/github-script@v7
@@ -175,3 +177,7 @@ jobs:
                       body: output
                   })
               }
+      - name: Reflect Failure Status if Needed
+        if: ${{ steps.tf-flow-repo-setup.outcome == 'failure' ||  steps.tf-flow-general.outcome == 'failure'}}
+        shell: bash
+        run: exit 1
