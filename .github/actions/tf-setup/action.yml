@@ -8,9 +8,6 @@ inputs:
   tfbackend-file-name:
     description: "Name of tfbackend file to create"
     required: true
-  tfvar-file-name:
-    description: "Name of tfvar file to create"
-    required: true
   tfstate-s3-bucket-arn:
     description: "ARN for the s3 bucket for tf state"
     required: true
@@ -62,19 +59,15 @@ runs:
 
             const [organization, repo_name] = process.env.repository.split("/")
 
-            let str = `organization = "${organization}"\nrepository_name = "${repo_name}"\n`;
+            let str = `TF_VAR_organization="${organization}"\nTF_VAR_repository_name="${repo_name}"\n`;
 
             for (let [key, value] of Object.entries(repoSpecificSecrets)) {
-                str += `${key.toLowerCase()} = \"${value}\"\n`
+                str += `TF_VAR_${key.toLowerCase()}=\"${value}\"\n`
             }
             return str
-    - name: Build tfvars file
+    - name: Write tfvars to env
       shell: bash
       run: >
-          touch $tfvar_file_name
+          output='${{steps.build-tfvars-str.outputs.result}}'
 
-          echo '${{steps.build-tfvars-str.outputs.result}}' > $tfvar_file_name
-      env:
-        repository: ${{ github.repository }}
-        tfvar_file_name: ${{ inputs.tfvar-file-name }}
-
+          while IFS="\n" read -r line; do echo $line >> $GITHUB_ENV; done <<< $output
