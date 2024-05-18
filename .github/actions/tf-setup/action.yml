@@ -59,15 +59,17 @@ runs:
 
             const [organization, repo_name] = process.env.repository.split("/")
 
-            let str = `TF_VAR_organization="${organization}"\nTF_VAR_repository_name="${repo_name}"\n`;
+            let str = `organization = "${organization}"\nrepository_name = "${repo_name}"\n`;
 
             for (let [key, value] of Object.entries(repoSpecificSecrets)) {
-                str += `TF_VAR_${key.toLowerCase()}=\"${value}\"\n`
+                str += `${key.toLowerCase()} = \"${value}\"\n`
             }
             return str
-    - name: Write tfvars to env
+    - name: Build tfvars file
       shell: bash
       run: >
-          output='${{steps.build-tfvars-str.outputs.result}}'
+          touch $tfvar_file_name
 
-          while IFS="\n" read -r line; do echo $line >> $GITHUB_ENV; done <<< $output
+          echo '${{steps.build-tfvars-str.outputs.result}}' > $tfvar_file_name
+      env:
+        tfvar_file_name: /infra/terraform.tfvars
