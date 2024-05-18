@@ -45,25 +45,6 @@ resource "aws_s3_bucket_versioning" "tf_state" {
   }
 }
 
-data "aws_iam_policy_document" "tf_state_s3" {
-  statement {
-    sid    = "TFStateS3Dependency"
-    effect = "Allow"
-    principals {
-      type        = "Federated"
-      identifiers = ["arn:aws:iam::${var.aws_account_id}:oidc-provider/token.actions.githubusercontent.com"]
-    }
-    # https://developer.hashicorp.com/terraform/language/settings/backends/s3
-    actions   = ["s3:ListBucket", "s3:GetObject", "s3:PutObject"]
-    resources = [aws_s3_bucket.tf_state.arn]
-  }
-}
-
-resource "aws_s3_bucket_policy" "tf_state_s3" {
-  bucket = aws_s3_bucket.tf_state.id
-  policy = data.aws_iam_policy_document.tf_state_s3.json
-}
-
 ## DynamoDB
 
 // This helps ensure only 1 party is modifying the resources
@@ -83,22 +64,26 @@ resource "aws_dynamodb_table" "tf_state" {
   }
 }
 
-data "aws_iam_policy_document" "tf_state_dynamodb" {
+// Create a policy that will be shared
+
+data "aws_iam_policy_document" "tf_state_dependency" {
   statement {
-    sid    = "TFStateDynamoDBDependency"
+    sid    = "TFStateS3Dependency"
     effect = "Allow"
-
-    principals {
-      type        = "Federated"
-      identifiers = ["arn:aws:iam::${var.aws_account_id}:oidc-provider/token.actions.githubusercontent.com"]
-    }
-
+    # https://developer.hashicorp.com/terraform/language/settings/backends/s3
+    actions   = ["s3:ListBucket", "s3:GetObject", "s3:PutObject"]
+    resources = [aws_s3_bucket.tf_state.arn]
+  }
+  statement {
+    sid       = "TFStateDynamoDBDependency"
+    effect    = "Allow"
     actions   = ["dynamodb:DescribeTable", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
     resources = [aws_dynamodb_table.tf_state.arn]
   }
 }
 
-resource "aws_dynamodb_resource_policy" "tf_state_lock" {
-  resource_arn = aws_dynamodb_table.tf_state.arn
-  policy       = data.aws_iam_policy_document.tf_state_dynamodb.json
+resource "aws_iam_policy" "tf_state_dependency" {
+  name        = "tf-state-dependency-interaction"
+  description = "This policy assigns permissions to interact with a tfstate stored in s3 and locks in DynamoDB."
+  policy      = data.aws_iam_policy_document.tf_state_dependency.json
 }
