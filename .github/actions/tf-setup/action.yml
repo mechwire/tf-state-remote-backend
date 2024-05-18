@@ -70,7 +70,4 @@ runs:
       run: >
           output='${{steps.build-tfvars-str.outputs.result}}'
 
-          while IFS="\n" read -r line
-          do
-            echo $line >> $GITHUB_ENV
-          done <<< $output
+          while IFS="\n" read -r line; do echo $line >> $GITHUB_ENV; done <<< $output
