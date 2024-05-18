@@ -3,6 +3,9 @@ description: "This sets up Terraform, as well as a supporting backend and variab
 inputs:
   gh-token:
     required: true
+  aws-region:
+    description: "AWS region"
+    required: true
   repo-specific-secrets:
     required: false
   tfbackend-file-name:
@@ -21,21 +24,20 @@ runs:
   using: "composite"
   steps:
     - name: Setup Terraform with specified version on the runner
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
       with:
-        terraform_version: 1.5.0
+        terraform_version: 1.5.7
     - name: Make TF backend config
       shell: bash
       run: >
           touch $tfbackend_file_name
 
-          key=$repository
           bucket=$(echo "$tfstate_s3" | sed 's/.*://')
           dynamodb_table=$(echo "$tfstate_dynamo" | sed 's/.*\///')
 
-          printf "key=\"$key\"\nbucket=\"$bucket\"\ndynamodb_table=\"$dynamodb_table\"\n" > $tfbackend_file_name
+          printf "region=\"$aws_region\"\nkey=\"dummyval\"\nbucket=\"$bucket\"\ndynamodb_table=\"$dynamodb_table\"\nencrypt=true\n" > $tfbackend_file_name
       env:
-        repository: ${{ github.repository }}
+        aws_region: ${{ inputs.aws-region }}
         tfbackend_file_name: ${{ inputs.tfbackend-file-name }}
         tfstate_s3: ${{ inputs.tfstate-s3-bucket-arn }}
         tfstate_dynamo: ${{ inputs.tfstate-lock-dynamodb-arn}}
