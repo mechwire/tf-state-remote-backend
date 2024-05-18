@@ -72,4 +72,4 @@ runs:
 
           echo '${{steps.build-tfvars-str.outputs.result}}' > $tfvar_file_name
       env:
-        tfvar_file_name: /infra/terraform.tfvars
+        tfvar_file_name: ./infra/terraform.tfvars
