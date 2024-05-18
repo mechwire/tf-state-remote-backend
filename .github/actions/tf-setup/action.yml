@@ -8,9 +8,6 @@ inputs:
   tfbackend-file-name:
     description: "Name of tfbackend file to create"
     required: true
-  tfvar-file-name:
-    description: "Name of tfvar file to create"
-    required: true
   tfstate-s3-bucket-arn:
     description: "ARN for the s3 bucket for tf state"
     required: true
@@ -68,10 +65,12 @@ runs:
                 str += `TF_VAR_${key.toLowerCase()}=\"${value}\"\n`
             }
             return str
-    - name: Build tfvars output
+    - name: Write tfvars to env
       shell: bash
       run: >
           output='${{steps.build-tfvars-str.outputs.result}}'
+
           while IFS="\n" read -r line
-            do echo $line >> $GITHUB_ENV
+          do
+            echo $line >> $GITHUB_ENV
           done <<< $output

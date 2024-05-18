@@ -19,9 +19,6 @@ inputs:
   tfbackend-file-name:
     description: "Name of tfbackend file to use"
     required: true
-  tfvar-file-name:
-    description: "Name of tfvar file to use"
-    required: true
 outputs:
   summary:
     description: "Results of the Terraform Flow"
@@ -59,8 +56,6 @@ runs:
       shell: bash
       run: terraform plan -no-color -input=false
       working-directory: ${{ inputs.directory }}
-      env:
-        tfvar_file_name: ${{ inputs.tfvar-file-name }}
       continue-on-error: true
     - name: TF Flow Result Builder Summary
       id: build-flow-summary
@@ -100,8 +95,6 @@ runs:
       run: >
 
           echo "Applying TF"
-          terraform apply -var-file="$tfvar_file_name" -auto-approve -input=false 
+          terraform apply -auto-approve -input=false 
       # -input=False means no interactive prompts
       working-directory: ${{ inputs.directory }}
-      env:
-        tfvar_file_name: ${{ inputs.tfvar-file-name }}
