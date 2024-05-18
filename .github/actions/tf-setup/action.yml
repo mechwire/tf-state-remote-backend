@@ -78,8 +78,8 @@ runs:
 
           while IFS= read -r line
           do
-              echo $line
-              echo '$line' >> $GITHUB_ENV
+              echo $line;
+              echo '$line' >> $GITHUB_ENV;
           done < $tfvar_file_name
 
       env:
