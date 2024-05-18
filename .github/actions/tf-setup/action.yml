@@ -78,7 +78,7 @@ runs:
           while IFS= read -r line
           do
               echo "$line" >> $GITHUB_ENV
-          done <<< $tfvar_file_name
+          done < $tfvar_file_name
 
       env:
         repository: ${{ github.repository }}
