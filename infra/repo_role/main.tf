@@ -23,5 +23,5 @@ data "aws_iam_policy" "tf_state_dependency_interaction" {
 
 resource "aws_iam_role_policy_attachment" "tf_state_dependency_interaction" {
   role       = module.github_oidc_role.name
-  policy_arn = aws_iam_policy.tf_state_dependency_interaction.arn
+  policy_arn = data.aws_iam_policy.tf_state_dependency_interaction.arn
 }
