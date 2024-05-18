@@ -74,10 +74,27 @@ runs:
 
           touch $tfvar_file_name
 
-          echo '${{steps.build-tfvars-str.outputs.result}}' >> $tfvar_file_name
-
+          echo '${{steps.build-tfvars-str.outputs.result}}' > $tfvar_file_name
+      env:
+        repository: ${{ github.repository }}
+        tfvar_file_name: ${{ inputs.tfvar-file-name }}
+    - name: Build tfvars file 2 Test
+      shell: bash
+      run: cat $tfvar_file_name
+      env:
+        repository: ${{ github.repository }}
+        tfvar_file_name: ${{ inputs.tfvar-file-name }}
+    - name: Build tfvars file 3 Test
+      shell: bash
+      run: >
+          while IFS="\n" read -r line; do echo '$line'; done < $tfvar_file_name
+      env:
+        repository: ${{ github.repository }}
+        tfvar_file_name: ${{ inputs.tfvar-file-name }}
+    - name: Build tfvars file 3 Test
+      shell: bash
+      run: >
           while IFS="\n" read -r line; do echo '$line' >> $GITHUB_ENV; done < $tfvar_file_name
-
       env:
         repository: ${{ github.repository }}
         tfvar_file_name: ${{ inputs.tfvar-file-name }}
