@@ -62,10 +62,10 @@ runs:
 
             const [organization, repo_name] = process.env.repository.split("/")
 
-            let str = `TF_VAR_organization = "${organization}"\nTF_VAR_repository_name = "${repo_name}"\n`;
+            let str = `TF_VAR_organization="${organization}"\nTF_VAR_repository_name="${repo_name}"\n`;
 
             for (let [key, value] of Object.entries(repoSpecificSecrets)) {
-                str += `TF_VAR_${key.toLowerCase()} = \"${value}\"\n`
+                str += `TF_VAR_${key.toLowerCase()}=\"${value}\"\n`
             }
             return str
     - name: Build tfvars file
@@ -73,7 +73,13 @@ runs:
       run: >
           touch $tfvar_file_name
 
-          echo '${{steps.build-tfvars-str.outputs.result}}' > $GITHUB_ENV
+          echo '${{steps.build-tfvars-str.outputs.result}}' >> $tfvar_file_name
+
+          while IFS= read -r line
+          do
+              echo "$line" >> $GITHUB_ENV
+          done <<< $tfvar_file_name
+
       env:
         repository: ${{ github.repository }}
         tfvar_file_name: ${{ inputs.tfvar-file-name }}
