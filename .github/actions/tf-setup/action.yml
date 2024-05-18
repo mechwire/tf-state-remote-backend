@@ -8,6 +8,9 @@ inputs:
   tfbackend-file-name:
     description: "Name of tfbackend file to create"
     required: true
+  tfvar-file-name:
+    description: "Name of tfvar file to use"
+    required: true
   tfstate-s3-bucket-arn:
     description: "ARN for the s3 bucket for tf state"
     required: true
@@ -71,7 +74,5 @@ runs:
           touch $tfvar_file_name
 
           echo '${{steps.build-tfvars-str.outputs.result}}' > $tfvar_file_name
-          ln -s $tfvar_file_name $tfvar_symlink_file_name
       env:
-        tfvar_file_name: ./infra/terraform.tfvars
-        tfvar_symlink_file_name: ./infra/setup/terraform.tfvars
+        tfvar_file_name: ${{ inputs.tfvar-file-name }}
