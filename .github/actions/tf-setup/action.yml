@@ -9,7 +9,7 @@ inputs:
     description: "Name of tfbackend file to create"
     required: true
   tfvar-file-name:
-    description: "Name of tfvar file to use"
+    description: "Name of tfvar file to create"
     required: true
   tfstate-s3-bucket-arn:
     description: "ARN for the s3 bucket for tf state"
@@ -71,7 +71,7 @@ runs:
                 values.push(`${key.toLowerCase()} = \"${value}\"`)
             }
             return values.join("\n")
-    - name: Write tfvars to env
+    - name: Build tfvars file
       shell: bash
       run: >
           touch $tfvar_file_name
