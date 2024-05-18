@@ -179,6 +179,6 @@ jobs:
                   })
               }
       - name: Reflect Failure Status if Needed
-        if: ${{ steps.update-pr.outcome == 'failure' }}
+        if: ${{ steps.tf-flow-repo-setup.outcome == 'failure' ||  steps.tf-flow-general.outcome == 'failure'}}
         shell: bash
         run: exit 1
