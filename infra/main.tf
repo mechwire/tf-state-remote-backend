@@ -28,14 +28,8 @@ resource "aws_s3_bucket_ownership_controls" "tf_state" {
   bucket = aws_s3_bucket.tf_state.id
 
   rule {
-    object_ownership = "BucketOwnerPreferred"
+    object_ownership = "BucketOwnerEnforced"
   }
-}
-
-resource "aws_s3_bucket_acl" "tf_state" {
-  depends_on = [aws_s3_bucket_ownership_controls.tf_state]
-  bucket     = aws_s3_bucket.tf_state.id
-  acl        = "private" // This ensures that the s3 bucket is restricted to the owner
 }
 
 resource "aws_s3_bucket_versioning" "tf_state" {
@@ -44,6 +38,40 @@ resource "aws_s3_bucket_versioning" "tf_state" {
     status = "Enabled" // helps with file recovery
   }
 }
+
+// IAM alone is not enough to grant access to the contents of an s3 bucket, particularly for PutObject. We need a policy document to allow it.
+data "aws_iam_policy_document" "tf_state_bucket_objects" {
+  statement {
+    principals {
+      type        = "*" // Overly permissive, because we're restricting it below
+      identifiers = ["*"]
+    }
+
+    actions   = ["s3:GetObject", "s3:PutObject"]
+    resources = ["${aws_s3_bucket.tf_state.arn}/$${aws:PrincipalTag/repository}/*.tf_state"]
+    condition {
+      test     = "StringLike"
+      variable = "aws:PrincipalArn"
+      values   = ["arn:aws:iam::${var.aws_account_id}:role/github_infra_*"]
+    }
+  }
+  // Since we decided to have a separate role to configure the project / repo role, that needs a separate statement to allow it to use a different directory
+  statement {
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.aws_account_id}:role/github_infra_role_provisioner"]
+    }
+
+    actions   = ["s3:GetObject", "s3:PutObject"]
+    resources = ["${aws_s3_bucket.tf_state.arn}/*/repo-setup.tf_state"]
+  }
+}
+
+resource "aws_s3_bucket_policy" "tf_state_bucket_objects" {
+  bucket = aws_s3_bucket.tf_state.id
+  policy = data.aws_iam_policy_document.tf_state_bucket_objects.json
+}
+
 
 ## DynamoDB
 

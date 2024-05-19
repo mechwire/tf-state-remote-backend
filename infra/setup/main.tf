@@ -23,7 +23,7 @@ data "aws_iam_policy_document" "repo_role" {
   statement {
     sid       = "S3"
     effect    = "Allow"
-    actions   = ["s3:CreateBucket", "s3:PutBucketTagging", "s3:ListBucket", "s3:GetBucketTagging", "s3:GetBucketPolicy", "s3:GetBucketLogging", "s3:GetBucketAcl", "s3:GetBucketCors", "s3:GetBucketVersioning", "s3:GetBucketWebsite", "s3:GetAccelerateConfiguration", "s3:GetBucketRequestPayment", "s3:GetLifecycleConfiguration", "s3:GetReplicationConfiguration", "s3:GetEncryptionConfiguration", "s3:GetBucketObjectLockConfiguration", "s3:PutBucketOwnershipControls", "s3:PutBucketVersioning", "s3:GetBucketOwnershipControls", "s3:PutObjectAcl", "s3:DeleteBucket", "s3:PutBucketAcl"]
+    actions   = ["s3:CreateBucket", "s3:PutBucketTagging", "s3:ListBucket", "s3:GetBucketTagging", "s3:GetBucketPolicy", "s3:GetBucketLogging", "s3:GetBucketAcl", "s3:GetBucketCors", "s3:GetBucketVersioning", "s3:GetBucketWebsite", "s3:GetAccelerateConfiguration", "s3:GetBucketRequestPayment", "s3:GetLifecycleConfiguration", "s3:GetReplicationConfiguration", "s3:GetEncryptionConfiguration", "s3:GetBucketObjectLockConfiguration", "s3:PutBucketOwnershipControls", "s3:PutBucketVersioning", "s3:GetBucketOwnershipControls", "s3:PutObjectAcl", "s3:DeleteBucket", "s3:PutBucketAcl", "s3:PutBucketPolicy"]
     resources = ["arn:aws:s3:::tf-state*"]
   }
   // DynamoDB doesn't support tag-based access, so we restrict by resource name
@@ -32,6 +32,13 @@ data "aws_iam_policy_document" "repo_role" {
     effect    = "Allow"
     actions   = ["dynamodb:CreateTable", "dynamodb:TagResource", "dynamodb:DescribeTable", "dynamodb:DescribeContinuousBackups", "dynamodb:DescribeTimeToLive", "dynamodb:ListTagsOfResource"]
     resources = ["arn:aws:dynamodb:*:*:table/tf-state-lock"]
+  }
+
+  statement {
+    sid       = "IAM"
+    effect    = "Allow"
+    actions   = ["iam:GetPolicy", "iam:GetPolicyVersion"]
+    resources = ["arn:aws:iam::${var.aws_account_id}:policy/tf-state-dependency-interaction"]
   }
 }
 
