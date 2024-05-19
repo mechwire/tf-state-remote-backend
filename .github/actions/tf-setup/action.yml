@@ -52,7 +52,6 @@ runs:
       uses: actions/github-script@v7
       env:
           repository: ${{ github.repository }}
-          # whatever isn't covered by the above
           repo_specific_secrets: ${{ inputs.repo-specific-secrets }}
       with:
         github-token: ${{ inputs.gh-token }}

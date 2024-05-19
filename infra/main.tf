@@ -63,7 +63,7 @@ data "aws_iam_policy_document" "tf_state_bucket_objects" {
     }
 
     actions   = ["s3:GetObject", "s3:PutObject"]
-    resources = ["${aws_s3_bucket.tf_state.arn}//*/repo-setup.tf_state"]
+    resources = ["${aws_s3_bucket.tf_state.arn}/*/repo-setup.tf_state"]
   }
 }
 
