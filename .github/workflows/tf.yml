@@ -25,11 +25,6 @@ on:
         required: true
       TF_STATE_LOCK_DYNAMODB_ARN:
         required: true
-  push:
-    paths:
-    - "infra/setup/**.tf"
-    - "infra/**.tf"
-    - ".github/**.yml"
 
 permissions:
   actions: write
