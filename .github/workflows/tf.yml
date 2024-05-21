@@ -116,7 +116,7 @@ jobs:
           force-deploy: ${{ inputs.force-deploy }}
         continue-on-error: true
       - name: test
-        run: ${{ steps.tf-flow-general.outputs.tf-output }}
+        run: echo ${{ steps.tf-flow-general.outputs.tf-output }}
       - name: Update PR with TF Statuses
         uses: actions/github-script@v7
         if: github.ref != 'refs/heads/main' && github.event_name == 'push'
