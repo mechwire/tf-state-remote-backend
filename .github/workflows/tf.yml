@@ -52,7 +52,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Checkout the repository to where the workflow was called
+      - name: Checkout the repository that triggered the workflow
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -60,7 +60,7 @@ jobs:
           sparse-checkout: |
             .github
             infra
-      - name: Checkout the repository to where the workflow lives
+      - name: Checkout the repository where this workflow lives
         if: ${{ github.repository != 'mechwire/tf-state-remote-backend' }}
         uses: actions/checkout@v4
         with: 
@@ -68,7 +68,7 @@ jobs:
           sparse-checkout: |
             .github/actions
           path: ./.temp
-      - name: Move files over for second repo
+      - name: Move workflow-specific files to normal repo structure, for action
         if: ${{ github.repository != 'mechwire/tf-state-remote-backend' }}
         run: >
             mkdir ./.github/actions;
