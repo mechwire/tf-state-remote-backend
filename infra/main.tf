@@ -115,3 +115,7 @@ resource "aws_iam_policy" "tf_state_dependency" {
   description = "This policy assigns permissions to interact with a tfstate stored in s3 and locks in DynamoDB."
   policy      = data.aws_iam_policy_document.tf_state_dependency.json
 }
+
+output "test" {
+  value = "wow"
+}

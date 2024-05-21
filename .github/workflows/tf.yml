@@ -43,7 +43,7 @@ jobs:
     name: "Infra Change Management"
     runs-on: ubuntu-latest
     outputs:
-      tf-outputs-general: ${{ steps.tf-flow-general.outputs.tf-outputs }}
+      tf-outputs-general: ${{ steps.tf-flow-general.outputs.tf-output }}
     env: 
       TF_LOG: INFO
       full_tf_folder_path: ${{ github.workspace }}${{ inputs.tf-folder-path }}
@@ -115,6 +115,8 @@ jobs:
           tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
           force-deploy: ${{ inputs.force-deploy }}
         continue-on-error: true
+      - name: test
+        run: ${{ steps.tf-flow-general.outputs.tf-output }}
       - name: Update PR with TF Statuses
         uses: actions/github-script@v7
         if: github.ref != 'refs/heads/main' && github.event_name == 'push'
