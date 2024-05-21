@@ -20,3 +20,4 @@ jobs:
     secrets: inherit
     with:
       ref: ${{ github.ref_name }}
+      force-deploy: true
