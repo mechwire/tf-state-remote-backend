@@ -22,6 +22,10 @@ inputs:
   tfvar-file-name:
     description: "Name of tfvar file to use"
     required: true
+  force-deploy:
+    required: false
+    type: boolean
+    default: false
 outputs:
   summary:
     description: "Results of the Terraform Flow"
@@ -112,7 +116,7 @@ runs:
       shell: bash
       run: exit 1
     - name: Terraform Apply (on Merge on Default Branch)
-      if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+      if: ${{ inputs.force-deploy || github.ref == 'refs/heads/main' && github.event_name == 'push' }}
       shell: bash
       run: terraform apply -auto-approve -input=false ${{steps.tfplan-file-name.outputs.tfplan}}
       # -input=False means no interactive prompts
