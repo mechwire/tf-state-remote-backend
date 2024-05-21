@@ -1,0 +1,23 @@
+on:
+  push:
+    paths:
+    - "infra/setup/**.tf"
+    - "infra/**.tf"
+    - ".github/**"
+
+
+permissions:
+  actions: write
+  checks: write
+  contents: read
+  issues: write
+  pull-requests: write
+  id-token: write # Used for the GitHub OIDC Flow
+
+jobs:
+  infra:
+    uses: ./.github/workflows/tf.yml
+    secrets: inherit
+    with:
+      ref: ${{ github.ref_name }}
+
