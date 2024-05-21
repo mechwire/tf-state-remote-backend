@@ -47,7 +47,7 @@ jobs:
       tf-outputs-general: ${{ steps.tf-flow-general.outputs.tf-outputs }}
     env: 
       TF_LOG: INFO
-      tf_folder_path: ${{ github.workspace }}${{ inputs.tf-folder-path }}
+      full_tf_folder_path: ${{ github.workspace }}${{ inputs.tf-folder-path }}
     defaults:
       run:
         shell: bash
@@ -65,7 +65,6 @@ jobs:
         uses: actions/checkout@v4
         with: 
           repository: 'mechwire/tf-state-remote-backend'
-          ref: make-workflow-reusable
           sparse-checkout: |
             .github/actions
           path: ./.temp
@@ -89,11 +88,11 @@ jobs:
           tfstate-s3-bucket-arn: ${{ secrets.TF_STATE_S3_BUCKET_ARN }}
           tfstate-lock-dynamodb-arn: ${{ secrets.TF_STATE_LOCK_DYNAMODB_ARN }}
       - name: TF Flow - Repo Setup
-        if: ${{ hashFiles(format('{0}/setup/**.tf', env.tf_folder_path)) != '' }}
+        if: ${{ hashFiles(format('{0}/setup/**.tf', env.full_tf_folder_path)) != '' }}
         id: tf-flow-repo-setup
         uses: ./.github/actions/tf-init-apply
         with:
-          directory: ${{ env.tf_folder_path}}/setup
+          directory: ${{ env.full_tf_folder_path}}/setup
           tf-component-name: repo-setup
           aws-region:  ${{ secrets.AWS_REGION }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -103,11 +102,11 @@ jobs:
           tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
         continue-on-error: true
       - name: TF Flow - General Functionality
-        if: ${{ hashFiles(format('{0}/**.tf', env.tf_folder_path)) != '' && steps.tf-flow-repo-setup.outcome == 'success' }}
+        if: ${{ hashFiles(format('{0}/**.tf', env.full_tf_folder_path)) != '' && steps.tf-flow-repo-setup.outcome == 'success' }}
         id: tf-flow-general
         uses: ./.github/actions/tf-init-apply
         with:
-          directory: ${{ env.tf_folder_path}}
+          directory: ${{ env.full_tf_folder_path}}
           tf-component-name: general
           aws-region:  ${{ secrets.AWS_REGION }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
