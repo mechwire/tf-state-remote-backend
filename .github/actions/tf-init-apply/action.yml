@@ -123,7 +123,7 @@ runs:
       working-directory: ${{ inputs.directory }}
     - name: Terraform Output 2
       shell: bash
-      run: terraform output -json
+      run: terraform refresh; terraform output; terraform output -json
     - name: Terraform Output
       id: tf-output
       shell: bash
