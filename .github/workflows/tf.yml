@@ -12,6 +12,10 @@ on:
         required: false
         type: string
         default: "main"
+      force-deploy:
+        required: false
+        type: boolean
+        default: false
     outputs:
       tf-outputs:
         description: "The JSON output from the primary Terraform script, if applicable"
@@ -95,6 +99,7 @@ jobs:
           aws-role-to-assume: github_infra_role_provisioner
           tfbackend-file-name: ${{ env.TFBACKEND_FILE_NAME }}
           tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
+          force-deploy: ${{ inputs.force-deploy }}
         continue-on-error: true
       - name: TF Flow - General Functionality
         if: ${{ hashFiles(format('{0}/**.tf', env.full_tf_folder_path)) != '' && steps.tf-flow-repo-setup.outcome == 'success' }}
@@ -108,6 +113,7 @@ jobs:
           aws-role-to-assume:  github_infra_${{ github.event.repository.name }}
           tfbackend-file-name: ${{ env.TFBACKEND_FILE_NAME }}
           tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
+          force-deploy: ${{ inputs.force-deploy }}
         continue-on-error: true
       - name: Update PR with TF Statuses
         uses: actions/github-script@v7
