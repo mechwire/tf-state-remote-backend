@@ -2,11 +2,33 @@ name: "Infra Change Management"
 # https://spacelift.io/blog/github-actions-terraform
 
 on:
-  push:
-    paths:
-    - "infra/setup/**.tf"
-    - "infra/**.tf"
-    - ".github/**.yml"
+  workflow_call:
+    inputs:
+      tf-folder-path:
+        required: false
+        type: string
+        default: "/infra"
+      ref:
+        required: false
+        type: string
+        default: "main"
+      force-deploy:
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      tf-outputs:
+        description: "The JSON output from the primary Terraform script, if applicable"
+        value: ${{ jobs.infra.outputs.tf-outputs-general }}
+    secrets:
+      AWS_REGION:
+        required: true
+      AWS_ACCOUNT_ID:
+        required: true
+      TF_STATE_S3_BUCKET_ARN:
+        required: true
+      TF_STATE_LOCK_DYNAMODB_ARN:
+        required: true
 
 permissions:
   actions: write
@@ -20,20 +42,40 @@ jobs:
   infra:
     name: "Infra Change Management"
     runs-on: ubuntu-latest
+    outputs:
+      tf-outputs-general: ${{ steps.tf-flow-general.outputs.tf-output }}
     env: 
       TF_LOG: INFO
+      full_tf_folder_path: ${{ github.workspace }}${{ inputs.tf-folder-path }}
     defaults:
       run:
         shell: bash
     steps:
-      - name: Checkout the repository to the runner
-        uses: actions/checkout@v2
+      - name: Checkout the repository that triggered the workflow
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.ref_name }}
+          sparse-checkout: |
+            .github
+            infra
+      - name: Checkout the repository where this workflow lives
+        if: ${{ github.repository != 'mechwire/tf-state-remote-backend' }}
+        uses: actions/checkout@v4
+        with: 
+          repository: 'mechwire/tf-state-remote-backend'
+          sparse-checkout: |
+            .github/actions
+          path: ./.temp
+      - name: Move workflow-specific files to normal repo structure, for action
+        if: ${{ github.repository != 'mechwire/tf-state-remote-backend' }}
+        run: >
+            mkdir -p ./.github/actions;
+            mv ./.temp/.github/actions/* ./.github/actions/;
       - name: Define semi-dynamic environmental variables
         run: >
-
-            echo "TFBACKEND_FILE_NAME=$(readlink -f ./infra/gh.tfbackend)" >> $GITHUB_ENV;
+            echo "TFBACKEND_FILE_NAME=$(readlink -f ./gh.tfbackend)" >> $GITHUB_ENV;
             echo "TFVAR_FILE_NAME=$(readlink -f ./gh.tfvars)" >> $GITHUB_ENV;
-
       - name: Setup TF
         uses: ./.github/actions/tf-setup
         with:
@@ -45,11 +87,11 @@ jobs:
           tfstate-s3-bucket-arn: ${{ secrets.TF_STATE_S3_BUCKET_ARN }}
           tfstate-lock-dynamodb-arn: ${{ secrets.TF_STATE_LOCK_DYNAMODB_ARN }}
       - name: TF Flow - Repo Setup
-        if: ${{ hashFiles('./infra/setup/**.tf') != ''}}
+        if: ${{ hashFiles(format('{0}/setup/**.tf', env.full_tf_folder_path)) != '' }}
         id: tf-flow-repo-setup
         uses: ./.github/actions/tf-init-apply
         with:
-          directory: ./infra/setup
+          directory: ${{ env.full_tf_folder_path}}/setup
           tf-component-name: repo-setup
           aws-region:  ${{ secrets.AWS_REGION }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
@@ -57,19 +99,21 @@ jobs:
           aws-role-to-assume: github_infra_role_provisioner
           tfbackend-file-name: ${{ env.TFBACKEND_FILE_NAME }}
           tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
+          force-deploy: ${{ inputs.force-deploy }}
         continue-on-error: true
       - name: TF Flow - General Functionality
-        if: ${{ hashFiles('./infra/**.tf') != '' && steps.tf-flow-repo-setup.outcome == 'success' }}
+        if: ${{ hashFiles(format('{0}/**.tf', env.full_tf_folder_path)) != '' && steps.tf-flow-repo-setup.outcome == 'success' }}
         id: tf-flow-general
         uses: ./.github/actions/tf-init-apply
         with:
-          directory: ./infra
+          directory: ${{ env.full_tf_folder_path}}
           tf-component-name: general
           aws-region:  ${{ secrets.AWS_REGION }}
           aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
           aws-role-to-assume:  github_infra_${{ github.event.repository.name }}
           tfbackend-file-name: ${{ env.TFBACKEND_FILE_NAME }}
           tfvar-file-name:  ${{ env.TFVAR_FILE_NAME }}
+          force-deploy: ${{ inputs.force-deploy }}
         continue-on-error: true
       - name: Update PR with TF Statuses
         uses: actions/github-script@v7
@@ -89,6 +133,10 @@ jobs:
                   state: 'open',
                   head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
               })
+
+              if (pullRequests.data.length == 0) {
+                return
+              }
 
               // Set issue number for following calls from context (if on pull request event) or from above variable.
               const issueNumber = context.issue.number || pullRequests.data[0].number

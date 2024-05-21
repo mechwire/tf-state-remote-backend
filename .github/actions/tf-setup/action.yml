@@ -54,7 +54,6 @@ runs:
           repository: ${{ github.repository }}
           repo_specific_secrets: ${{ inputs.repo-specific-secrets }}
       with:
-        github-token: ${{ inputs.gh-token }}
         result-encoding: string
         # https://github.com/actions/github-script/issues/273#issuecomment-1257245316
         script: |
