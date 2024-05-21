@@ -120,6 +120,7 @@ runs:
       shell: bash
       run: terraform apply -auto-approve -input=false ${{steps.tfplan-file-name.outputs.tfplan}}
       # -input=False means no interactive prompts
+      working-directory: ${{ inputs.directory }}
     - name: Terraform Output
       id: tf-output
       shell: bash
