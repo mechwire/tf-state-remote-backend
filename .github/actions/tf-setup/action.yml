@@ -47,6 +47,8 @@ runs:
           touch ~/.netrc
 
           printf "machine github.com login github_actions password ${{ inputs.gh-token }}\n" > ~/.netrc
+
+          chmod 600 ~/.netrc
     - name: Build tfvars string
       id: build-tfvars-str
       uses: actions/github-script@v7
